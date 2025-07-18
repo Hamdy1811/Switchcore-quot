@@ -91,6 +91,14 @@
       margin: 2px 0;
       font-size: 1em;
     }
+    .client-name-placeholder {
+      color: #d10000;
+      font-weight: 700;
+    }
+    .date-issue-placeholder {
+      color: #222;
+      font-weight: 700;
+    }
     .packages-section {
       display: flex;
       gap: 10px;
@@ -171,6 +179,46 @@
       font-weight: 700;
       color: #d10000;
     }
+    /* --- Recommended services table --- */
+    .recommended-services-table-container {
+      margin: 0 0 18px 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: auto;
+    }
+    .recommended-services-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fafafa;
+      margin-bottom: 10px;
+      table-layout: fixed;
+    }
+    .recommended-services-table td {
+      padding: 7px 4px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 1em;
+      vertical-align: top;
+    }
+    .recommended-services-table tr:last-child td {
+      border-bottom: none;
+    }
+    .recommended-services-title {
+      width: 70%;
+      text-align: left;
+      word-break: break-word;
+    }
+    .recommended-services-cost {
+      text-align: right;
+      min-width: 100px;
+      font-weight: bold;
+      font-family: 'Courier New', Courier, monospace;
+      word-break: break-all;
+    }
+    .extras-label {
+      font-style: italic;
+      color: #555;
+      padding-top: 8px;
+    }
     .final-details {
       padding: 10px 5px 5px 5px;
     }
@@ -192,6 +240,10 @@
     .final-details li {
       padding: 2px 0;
       font-size: 1em;
+    }
+    .payment-terms-placeholder {
+      font-weight: 700;
+      color: #d10000;
     }
     .signatures-section {
       padding: 10px 5px;
@@ -281,6 +333,9 @@
         page-break-inside: avoid;
         break-inside: avoid;
       }
+      .recommended-services-table-container {
+        page-break-before: always;
+      }
     }
   </style>
 </head>
@@ -300,9 +355,9 @@
         <div class="header-details">
           <h1>Quotation</h1>
           <p><strong>Company Name:</strong> Switch Communications</p>
-          <p><strong>Client Name:</strong> El Abiad Automotive</p>
+          <p><strong>Client Name:</strong> <span class="client-name-placeholder">{CLIENT_NAME}</span></p>
           <p><strong>Quotation #:</strong> HM1</p>
-          <p><strong>Date of Issue:</strong> 17/07/2025</p>
+          <p><strong>Date of Issue:</strong> <span class="date-issue-placeholder">{DATE_OF_ISSUE}</span></p>
         </div>
       </header>
       <main class="packages-section">
@@ -387,16 +442,42 @@
           </div>
         </div>
       </main>
-      <section class="final-details">
+      <!-- Recommended Services (table, on new page if needed) -->
+      <div class="recommended-services-table-container">
         <h2>Recommended Services</h2>
-        <ul>
-          <li>Other services</li>
-          <li>Catering upon your request</li>
-          <li>Branded entertainment outdoor show</li>
-        </ul>
+        <table class="recommended-services-table">
+          <tr>
+            <td class="recommended-services-title">Catering upon your request</td>
+            <td class="recommended-services-cost">{CATERING_COST}</td>
+          </tr>
+          <tr>
+            <td class="recommended-services-title">Branded entertainment outdoor show</td>
+            <td class="recommended-services-cost">{OUTDOOR_SHOW_COST}</td>
+          </tr>
+          <tr>
+            <td class="recommended-services-title extras-label" colspan="2">Any Extras:</td>
+          </tr>
+          <tr>
+            <td class="recommended-services-title">Extra 1</td>
+            <td class="recommended-services-cost">{EXTRA_1_COST}</td>
+          </tr>
+          <tr>
+            <td class="recommended-services-title">Extra 2</td>
+            <td class="recommended-services-cost">{EXTRA_2_COST}</td>
+          </tr>
+          <tr>
+            <td class="recommended-services-title">Extra 3</td>
+            <td class="recommended-services-cost">{EXTRA_3_COST}</td>
+          </tr>
+        </table>
+      </div>
+      <section class="final-details">
         <h2>Final Details</h2>
         <ul>
-          <li><strong>Payment Terms:</strong> 50% in advance - 50% on the event day</li>
+          <li>
+            <strong>Payment Terms:</strong>
+            <span class="payment-terms-placeholder">{ADVANCE_PERCENTAGE}% in advance - {REMAINING_PERCENTAGE}% on the event day</span>
+          </li>
           <li><strong>VAT:</strong> 14%</li>
         </ul>
       </section>
