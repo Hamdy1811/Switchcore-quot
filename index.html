@@ -3,66 +3,232 @@
 <head>
   <base target="_top">
   <title>Switchcore CRM</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
-    .client-card { background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-    .field { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-    .label { font-weight: bold; display: inline-block; width: 150px; color: #555; }
-    .value { color: #222; }
-    textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; }
-    button { background: #4285f4; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #3367d6; }
-    #message { padding: 15px; margin: 20px 0; border-radius: 4px; display: none; }
-    .error { background: #ffebee; color: #c62828; border-left: 4px solid #c62828; }
-    .success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #2e7d32; }
-    h1 { color: #4285f4; margin-bottom: 25px; }
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #3498db;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
-<body>
-  <h1>Switchcore CRM Dashboard</h1>
-  
-  <div class="client-card">
-    <div class="field">
-      <span class="label">Client ID:</span>
-      <span class="value" id="clientId">Loading...</span>
+<body class="bg-gray-50">
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 12.094A5.973 5.973 0 004 15v1H1v-1a3 3 0 013.75-2.906z"/></svg>
+        <h1 class="text-2xl font-bold">Switchcore CRM</h1>
+      </div>
+      <div id="clientIdDisplay" class="bg-blue-700 px-3 py-1 rounded-full text-sm font-medium"></div>
     </div>
-    <div class="field">
-      <span class="label">Name:</span>
-      <span class="value" id="clientName"></span>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto p-4 md:p-6">
+    <!-- Client Search -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Enter Client ID</label>
+          <div class="flex">
+            <input type="text" id="clientIdInput" class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="e.g. SC-001">
+            <button onclick="loadClient()" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Search
+            </button>
+          </div>
+        </div>
+        <div>
+          <button onclick="showNewClientForm()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+            + New Client
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="field">
-      <span class="label">Company:</span>
-      <span class="value" id="companyName"></span>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-8 hidden">
+      <div class="loading-spinner mx-auto"></div>
+      <p class="mt-2 text-gray-600">Loading client data...</p>
     </div>
-    <div class="field">
-      <span class="label">Email:</span>
-      <span class="value" id="clientEmail"></span>
+
+    <!-- Client Dashboard -->
+    <div id="clientDashboard" class="hidden bg-white rounded-lg shadow-md overflow-hidden">
+      <!-- Client Info -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex flex-col md:flex-row md:justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-800" id="clientName"></h2>
+            <p class="text-gray-600" id="companyName"></p>
+          </div>
+          <div class="mt-4 md:mt-0">
+            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide" id="clientStage"></span>
+            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full ml-2" id="clientTags"></span>
+          </div>
+        </div>
+        <div class="mt-4">
+          <a href="mailto:" id="clientEmailLink" class="text-blue-600 hover:underline flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+            <span id="clientEmail"></span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Client Notes</h3>
+        <textarea id="clientNotes" rows="4" class="w-full border border-gray-300 rounded-md p-2 focus:border-blue-500 focus:ring-blue-500"></textarea>
+        <div class="mt-3 flex justify-end">
+          <button onclick="saveNotes()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Save Notes
+          </button>
+        </div>
+      </div>
+
+      <!-- Quotation Section -->
+      <div class="p-6">
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Quotation Tools</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button onclick="generateQuotation()" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            Generate Quotation
+          </button>
+          <button onclick="showEmailForm()" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+            Email Quotation
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="field">
-      <span class="label">Stage:</span>
-      <span class="value" id="clientStage"></span>
+
+    <!-- New Client Form -->
+    <div id="newClientForm" class="hidden bg-white rounded-lg shadow-md p-6 mt-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Create New Client</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
+          <div class="flex">
+            <input type="text" id="newClientId" class="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" readonly>
+            <button onclick="generateNewId()" class="bg-blue-600 text-white px-3 py-1 rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              Generate
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+          <input type="text" id="newClientName" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+          <input type="text" id="newClientCompany" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" id="newClientEmail" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+          <input type="text" id="newClientTags" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="VIP, Hot Lead, etc.">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Initial Notes</label>
+          <textarea id="newClientNotes" rows="2" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button onclick="hideNewClientForm()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          Cancel
+        </button>
+        <button onclick="createNewClient()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+          Save Client
+        </button>
+      </div>
     </div>
-    <div class="field">
-      <span class="label">Tags:</span>
-      <span class="value" id="clientTags"></span>
+
+    <!-- Email Quotation Form -->
+    <div id="emailQuotationForm" class="hidden bg-white rounded-lg shadow-md p-6 mt-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">Email Quotation</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Recipient Email</label>
+          <input type="email" id="emailRecipient" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+          <input type="text" id="emailSubject" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="Your Quotation from Switchcore">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+          <textarea id="emailBody" rows="4" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">Dear valued client,\n\nPlease find attached your quotation as requested.\n\nBest regards,\nThe Switchcore Team</textarea>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button onclick="hideEmailForm()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          Cancel
+        </button>
+        <button onclick="sendQuotationEmail()" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+          Send Quotation
+        </button>
+      </div>
     </div>
-    
-    <h3>Client Notes</h3>
-    <textarea id="clientNotes" rows="5" placeholder="Enter client notes here..."></textarea>
-    <button onclick="saveNotes()">Save Notes</button>
-    
-    <div id="message"></div>
+  </main>
+
+  <!-- Quotation Preview Modal -->
+  <div id="quotationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-2/3 shadow-lg rounded-md bg-white">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-xl font-semibold text-gray-800">Quotation Preview</h3>
+        <button onclick="closeQuotationModal()" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="mt-4" id="quotationPreview">
+        <!-- Quotation content will be inserted here -->
+      </div>
+      <div class="mt-4 flex justify-end space-x-3">
+        <button onclick="downloadQuotation()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          Download PDF
+        </button>
+        <button onclick="closeQuotationModal()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+          Close
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
+    // Global variables
+    let currentClientId = '';
+    const { jsPDF } = window.jspdf;
+
+    // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
-      const clientId = urlParams.get('clientId') || 'Z'; // Default to 'Z' for testing
-      document.getElementById('clientId').textContent = clientId;
-      loadClientData(clientId);
+      const clientId = urlParams.get('clientId');
+      
+      if (clientId) {
+        document.getElementById('clientIdInput').value = clientId;
+        loadClient(clientId);
+      }
     });
 
-    function loadClientData(clientId) {
+    // Client data functions
+    function loadClient(clientId) {
+      if (!clientId) {
+        showError('Please enter a Client ID');
+        return;
+      }
+
+      showLoading(true);
+      currentClientId = clientId;
+      
       google.script.run
         .withSuccessHandler(displayClient)
         .withFailureHandler(showError)
@@ -70,53 +236,176 @@
     }
 
     function displayClient(response) {
+      showLoading(false);
+      
       try {
         const data = typeof response === 'string' ? JSON.parse(response) : response;
         
-        if(data.error) {
+        if (data.error) {
           showError(data.error);
           return;
         }
-        
-        // Display all available data
-        document.getElementById('clientName').textContent = data.clientName || 'Not specified';
-        document.getElementById('companyName').textContent = data.companyName || 'Not specified';
-        document.getElementById('clientEmail').textContent = data.clientEmail || 'Not specified';
-        document.getElementById('clientStage').textContent = data.clientStage || 'Not specified';
-        document.getElementById('clientTags').textContent = data.clientTags || 'None';
+
+        // Update client info display
+        document.getElementById('clientIdDisplay').textContent = data.ID;
+        document.getElementById('clientName').textContent = data.clientName;
+        document.getElementById('companyName').textContent = data.companyName;
+        document.getElementById('clientEmail').textContent = data.clientEmail;
+        document.getElementById('clientEmailLink').href = `mailto:${data.clientEmail}`;
+        document.getElementById('clientStage').textContent = data.clientStage;
+        document.getElementById('clientTags').textContent = data.clientTags;
         document.getElementById('clientNotes').value = data.clientNotes || '';
         
-        showMessage('Client data loaded successfully', 'success');
+        // Pre-fill email form
+        document.getElementById('emailRecipient').value = data.clientEmail || '';
+        
+        // Show dashboard
+        document.getElementById('clientDashboard').classList.remove('hidden');
       } catch (e) {
-        showError('Error parsing client data: ' + e.message);
+        showError('Error displaying client data: ' + e.message);
       }
     }
 
     function saveNotes() {
-      const clientId = document.getElementById('clientId').textContent;
       const notes = document.getElementById('clientNotes').value;
       
       google.script.run
-        .withSuccessHandler(function() {
-          showMessage('Notes saved successfully!', 'success');
+        .withSuccessHandler(() => showMessage('Notes saved successfully!'))
+        .withFailureHandler(showError)
+        .updateClientField(currentClientId, 'clientNotes', notes);
+    }
+
+    // New client functions
+    function showNewClientForm() {
+      document.getElementById('clientDashboard').classList.add('hidden');
+      document.getElementById('newClientForm').classList.remove('hidden');
+      generateNewId();
+    }
+
+    function hideNewClientForm() {
+      document.getElementById('newClientForm').classList.add('hidden');
+    }
+
+    function generateNewId() {
+      google.script.run
+        .withSuccessHandler(id => {
+          document.getElementById('newClientId').value = id;
         })
         .withFailureHandler(showError)
-        .updateClientNotes(clientId, notes);
+        .generateNextClientId();
     }
 
-    function showError(message) {
-      const msgDiv = document.getElementById('message');
-      msgDiv.innerHTML = `<strong>Error:</strong> ${message}`;
-      msgDiv.className = 'error';
-      msgDiv.style.display = 'block';
+    function createNewClient() {
+      const clientData = {
+        id: document.getElementById('newClientId').value,
+        name: document.getElementById('newClientName').value,
+        company: document.getElementById('newClientCompany').value,
+        email: document.getElementById('newClientEmail').value,
+        tags: document.getElementById('newClientTags').value,
+        notes: document.getElementById('newClientNotes').value
+      };
+
+      if (!clientData.name) {
+        showError('Client name is required');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(id => {
+          showMessage('Client created successfully!');
+          document.getElementById('clientIdInput').value = id;
+          loadClient(id);
+          hideNewClientForm();
+        })
+        .withFailureHandler(showError)
+        .addNewClient(clientData);
     }
 
-    function showMessage(text, type) {
-      const msgDiv = document.getElementById('message');
-      msgDiv.textContent = text;
-      msgDiv.className = type;
-      msgDiv.style.display = 'block';
-      setTimeout(() => msgDiv.style.display = 'none', 5000);
+    // Quotation functions
+    function generateQuotation() {
+      showLoading(true);
+      
+      google.script.run
+        .withSuccessHandler(quotationHtml => {
+          document.getElementById('quotationPreview').innerHTML = quotationHtml;
+          document.getElementById('quotationModal').classList.remove('hidden');
+          showLoading(false);
+        })
+        .withFailureHandler(showError)
+        .include('quotation');
+    }
+
+    function downloadQuotation() {
+      const element = document.getElementById('quotationPreview');
+      
+      html2canvas(element).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Quotation_${currentClientId}.pdf`);
+      });
+    }
+
+    function closeQuotationModal() {
+      document.getElementById('quotationModal').classList.add('hidden');
+    }
+
+    // Email functions
+    function showEmailForm() {
+      document.getElementById('emailQuotationForm').classList.remove('hidden');
+    }
+
+    function hideEmailForm() {
+      document.getElementById('emailQuotationForm').classList.add('hidden');
+    }
+
+    function sendQuotationEmail() {
+      const recipient = document.getElementById('emailRecipient').value;
+      const subject = document.getElementById('emailSubject').value;
+      const body = document.getElementById('emailBody').value;
+
+      if (!recipient) {
+        showError('Recipient email is required');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(() => {
+          showMessage('Quotation sent successfully!');
+          hideEmailForm();
+        })
+        .withFailureHandler(showError)
+        .emailQuotation(currentClientId, recipient, subject, body);
+    }
+
+    // UI Helper functions
+    function showLoading(show) {
+      document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
+      if (show) {
+        document.getElementById('clientDashboard').classList.add('hidden');
+      }
+    }
+
+    function showMessage(message, isError = false) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg z-50 ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+        setTimeout(() => messageDiv.remove(), 500);
+      }, 3000);
+    }
+
+    function showError(error) {
+      showLoading(false);
+      showMessage(error.message || error, true);
+      console.error(error);
     }
   </script>
 </body>
