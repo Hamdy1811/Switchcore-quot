@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+    .quotation { max-width: 800px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
+    .logo { font-size: 24px; font-weight: bold; color: #2b6cb0; }
+    .quotation-title { text-align: center; margin: 20px 0; font-size: 24px; }
+    .client-info { margin-bottom: 30px; }
+    .quotation-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .quotation-table th { background: #f7fafc; text-align: left; padding: 10px; border: 1px solid #e2e8f0; }
+    .quotation-table td { padding: 10px; border: 1px solid #e2e8f0; }
+    .totals { margin-left: auto; width: 300px; }
+    .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #718096; }
+  </style>
+</head>
+<body>
+  <div class="quotation">
+    <div class="header">
+      <div class="logo">Switchcore</div>
+      <div>
+        <div>Quotation #{{QUOTATION_ID}}</div>
+        <div>{{TODAYS_DATE}}</div>
+      </div>
+    </div>
+
+    <div class="quotation-title">QUOTATION</div>
+
+    <div class="client-info">
+      <div><strong>{{CLIENT_NAME}}</strong></div>
+      <div>{{COMPANY_NAME}}</div>
+      <div>{{CLIENT_EMAIL}}</div>
+    </div>
+
+    <table class="quotation-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Description</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="quotation-items">
+        <!-- Items will be added dynamically -->
+        <tr>
+          <td>1</td>
+          <td>Consulting Services</td>
+          <td>10</td>
+          <td>$100.00</td>
+          <td>$1,000.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <table style="width: 100%">
+        <tr>
+          <td><strong>Subtotal:</strong></td>
+          <td style="text-align: right">$1,000.00</td>
+        </tr>
+        <tr>
+          <td><strong>Tax (10%):</strong></td>
+          <td style="text-align: right">$100.00</td>
+        </tr>
+        <tr>
+          <td><strong>Total:</strong></td>
+          <td style="text-align: right">$1,100.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for your business!</p>
+      <p>Switchcore Ltd • contact@switchcore.com • +123 456 7890</p>
+    </div>
+  </div>
+
+  <script>
+    // Replace placeholders with actual data
+    document.addEventListener('DOMContentLoaded', function() {
+      google.script.run
+        .withSuccessHandler(clientData => {
+          // Format today's date
+          const today = new Date();
+          const formattedDate = today.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+
+          // Replace placeholders
+          document.body.innerHTML = document.body.innerHTML
+            .replace(/{{QUOTATION_ID}}/g, clientData.ID || 'SC-' + today.getTime())
+            .replace(/{{TODAYS_DATE}}/g, formattedDate)
+            .replace(/{{CLIENT_NAME}}/g, clientData.clientName || '')
+            .replace(/{{COMPANY_NAME}}/g, clientData.companyName || '')
+            .replace(/{{CLIENT_EMAIL}}/g, clientData.clientEmail || '');
+        })
+        .getClientData('<?!= clientId ?>');
+    });
+  </script>
+</body>
+</html>
